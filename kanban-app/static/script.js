@@ -253,4 +253,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load tasks from API on startup
   await loadTasks();
-});]\
+});

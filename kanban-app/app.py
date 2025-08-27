@@ -59,5 +59,4 @@ def delete_task(id):
     finally:
         conn.close()
 
-if _name_ == '_main_':
-    app.run(debug=True)
+app = app
