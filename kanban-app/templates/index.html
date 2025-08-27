@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Project Progress</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <!-- Header with search and profile -->
+  <div class="header">
+    <div class="logo">Project Progress</div>
+    <div class="search-container">
+      <input type="text" class="search-input" placeholder="Search tasks..." />
+    </div>
+    <div class="header-actions">
+      <button class="btn">Profile</button>
+    </div>
+  </div>
+
+  <!-- Sidebar with user avatar -->
+  <div class="sidebar">
+    <div class="user-avatar">PP</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Analytics Section -->
+    <div class="analytics-section">
+      <div class="analytics-grid">
+        <div class="progress-and-calendar-container" style="display: flex; gap: 2rem; align-items: center;">
+          <div class="progress-stats">
+            <div class="progress-circle">
+              <div class="progress-text" id="progress-percent">75%</div>
+              <div class="progress-circle::before"></div>
+            </div>
+            <div>Project Progress</div>
+          </div>
+          <div class="calendar-container">
+            <input type="date" class="calendar-input" />
+          </div>
+        </div>
+        <div class="chart-container" id="chart-container"></div>
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="board-container">
+      <!-- To Do Column -->
+      <div class="column" data-status="todo">
+        <div class="column-header">
+          <span class="column-title">To Do</span>
+          <span class="task-count">0</span>
+        </div>
+        <div class="tasks-container"></div>
+        <button class="add-task-btn">+ Add Task</button>
+      </div>
+
+      <!-- In Progress Column -->
+      <div class="column" data-status="inprogress">
+        <div class="column-header">
+          <span class="column-title">In Progress</span>
+          <span class="task-count">0</span>
+        </div>
+        <div class="tasks-container"></div>
+        <button class="add-task-btn">+ Add Task</button>
+      </div>
+
+      <!-- Review Column -->
+      <div class="column" data-status="review">
+        <div class="column-header">
+          <span class="column-title">Review</span>
+          <span class="task-count">0</span>
+        </div>
+        <div class="tasks-container"></div>
+        <button class="add-task-btn">+ Add Task</button>
+      </div>
+
+      <!-- Done Column -->
+      <div class="column" data-status="done">
+        <div class="column-header">
+          <span class="column-title">Done</span>
+          <span class="task-count">0</span>
+        </div>
+        <div class="tasks-container"></div>
+        <button class="add-task-btn">+ Add Task</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
