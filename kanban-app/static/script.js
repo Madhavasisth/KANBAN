@@ -1,49 +1,70 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize with example hardcoded tasks
-  let tasks = [
-    {
-      id: 'task-1',
-      title: 'Design landing page',
-      description: 'Create a modern, responsive landing page with engaging visuals and clear call-to-actions. Include hero section, features, testimonials, and contact form.',
-      status: 'todo',
-      priority: 'info'
-    },
-    {
-      id: 'task-2',
-      title: 'Write documentation',
-      description: 'Document the API endpoints and create user guides for the new features. Include examples and troubleshooting section.',
-      status: 'todo',
-      priority: 'medium'
-    },
-    {
-      id: 'task-3',
-      title: 'Implement authentication',
-      description: 'Build secure user authentication system with JWT tokens and password encryption. Add login, signup, and password reset functionality.',
-      status: 'inprogress',
-      priority: 'high'
-    },
-    {
-      id: 'task-4',
-      title: 'Fix bugs in code',
-      description: 'Resolve critical bugs in the user registration flow and payment processing. Test all edge cases and error handling.',
-      status: 'inprogress',
-      priority: 'high'
-    },
-    {
-      id: 'task-5',
-      title: 'Update dependencies',
-      description: 'Update all project dependencies to latest stable versions and test compatibility. Check for security vulnerabilities.',
-      status: 'inprogress',
-      priority: 'medium'
-    },
-    {
-      id: 'task-6',
-      title: 'Code refactoring',
-      description: 'Clean up legacy code and improve performance of database queries. Optimize loading times and reduce memory usage.',
-      status: 'review',
-      priority: 'low'
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load tasks from API instead of hardcoded
+  let tasks = [];
+
+  // Load tasks from Flask API
+  async function loadTasks() {
+    try {
+      const response = await fetch('/api/tasks');
+      tasks = await response.json();
+      renderTasks();
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+      // Fallback to empty array if API fails
+      tasks = [];
+      renderTasks();
     }
-  ];
+  }
+
+  // Save task to API
+  async function saveTask(taskData) {
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData)
+      });
+      if (response.ok) {
+        await loadTasks(); // Reload to get the ID from database
+      }
+    } catch (error) {
+      console.error('Error saving task:', error);
+    }
+  }
+
+  // Update task in API
+  async function updateTask(taskId, taskData) {
+    try {
+      const response = await fetch(/api/tasks/${taskId}, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData)
+      });
+      if (response.ok) {
+        await loadTasks();
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  }
+
+  // Delete task from API
+  async function deleteTaskFromAPI(taskId) {
+    try {
+      const response = await fetch(/api/tasks/${taskId}, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        await loadTasks();
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  }
 
   const columns = document.querySelectorAll('.column');
   const searchInput = document.querySelector('.search-input');
@@ -54,6 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
     low: 'priority-low',
     info: 'priority-info'
   };
+
+  // Valid priorities for database
+  const validPriorities = ['high', 'medium', 'low'];
 
   function createTaskCard(task) {
     const card = document.createElement('div');
@@ -79,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     options.className = 'task-options';
 
     const editBtn = document.createElement('button');
-    editBtn.textContent = '✏️';
+    editBtn.textContent = '✏';
     editBtn.title = 'Edit Task';
     editBtn.addEventListener('click', e => {
       e.stopPropagation();
@@ -87,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const delBtn = document.createElement('button');
-    delBtn.textContent = '🗑️';
+    delBtn.textContent = '🗑';
     delBtn.title = 'Delete Task';
     delBtn.addEventListener('click', e => {
       e.stopPropagation();
@@ -153,17 +177,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  function updateTaskStatus(taskId, newStatus) {
-    const task = tasks.find(t => t.id === taskId);
+  async function updateTaskStatus(taskId, newStatus) {
+    const task = tasks.find(t => t.id == taskId);
     if (task && task.status !== newStatus) {
       task.status = newStatus;
-      renderTasks();
+      // Update in API
+      await updateTask(taskId, task);
     }
   }
 
-  function deleteTask(taskId) {
-    tasks = tasks.filter(t => t.id !== taskId);
-    renderTasks();
+  async function deleteTask(taskId) {
+    if (confirm('Are you sure you want to delete this task?')) {
+      await deleteTaskFromAPI(taskId);
+    }
   }
 
   const addTaskBtns = document.querySelectorAll('.add-task-btn');
@@ -175,39 +201,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  function openAddTaskModal(status) {
+  async function openAddTaskModal(status) {
     const title = prompt('Enter task title:');
     if (!title) return alert('Title is required.');
     const description = prompt('Enter task description:');
-    const priorityInput = prompt('Enter priority (high, medium, low, info):', 'info');
-    const priority = priorityClassMap[priorityInput.toLowerCase()] ? priorityInput.toLowerCase() : 'info';
+    const priorityInput = prompt('Enter priority (high, medium, low):', 'medium');
+    const priority = validPriorities.includes(priorityInput.toLowerCase()) ? priorityInput.toLowerCase() : 'medium';
 
     const newTask = {
-      id: `task-${Date.now()}`,
       title,
       description: description || '',
       status,
       priority
     };
 
-    tasks.push(newTask);
-    renderTasks();
+    await saveTask(newTask);
   }
 
-  function openEditTaskModal(taskId) {
-    const task = tasks.find(t => t.id === taskId);
+  async function openEditTaskModal(taskId) {
+    const task = tasks.find(t => t.id == taskId);
     if (!task) return;
     const newTitle = prompt('Edit task title:', task.title);
     if (!newTitle) return alert('Title is required.');
     const newDesc = prompt('Edit task description:', task.description);
-    const newPriorityInput = prompt('Edit priority (high, medium, low, info):', task.priority);
-    const newPriority = priorityClassMap[newPriorityInput.toLowerCase()] ? newPriorityInput.toLowerCase() : task.priority;
+    const newPriorityInput = prompt('Edit priority (high, medium, low):', task.priority);
+    const newPriority = validPriorities.includes(newPriorityInput.toLowerCase()) ? newPriorityInput.toLowerCase() : task.priority;
 
-    task.title = newTitle;
-    task.description = newDesc || '';
-    task.priority = newPriority;
+    const updatedTask = {
+      ...task,
+      title: newTitle,
+      description: newDesc || '',
+      priority: newPriority
+    };
 
-    renderTasks();
+    await updateTask(taskId, updatedTask);
   }
 
   if (searchInput) {
@@ -216,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
       columns.forEach(col => {
         const container = col.querySelector('.tasks-container');
         container.querySelectorAll('.task-card').forEach(card => {
-          const task = tasks.find(t => t.id === card.dataset.id);
+          const task = tasks.find(t => t.id == card.dataset.id);
           const match = task.title.toLowerCase().includes(query) || task.description.toLowerCase().includes(query);
           card.style.display = match ? '' : 'none';
         });
@@ -224,6 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initial render including hardcoded tasks
-  renderTasks();
-});
+  // Load tasks from API on startup
+  await loadTasks();
+});]\
